@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+
+<head></head>
+
+<body>{% extends "base.html" %}
+
+    {% block content %}
+
+        <h1>Random Home Page Placeholder Text</h1>
+
+            <p>Further random home page paragraph text used while
+                setting up the project structure.
+            </p>
+
+            <section class="card">
+                <h1>Add User</h1>
+            
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+            
+                    <div class="field">
+                        {{ form.name.label }}
+                        {{ form.name() }}
+                    </div>
+            
+                    <div class="field">
+                        {{ form.email.label }}
+                        {{ form.email() }}
+                    </div>
+            
+                    <div class="field">
+                        {{ form.phone.label }}
+                        {{ form.phone() }}
+                    </div>
+            
+                    {{ form.submit(class="btn") }}
+            
+                </form>
+            </section>
+
+    {% endblock %}
+</body>
+
+</html>
