@@ -60,8 +60,12 @@
                 <div class="seller-contact">
                     <p>To buy this book, contact the seller at:</p>
                     <a href="mailto:{{ listing.seller.email }}" class="contact-email">{{ listing.seller.email }}</a>
-                    {% if listing.phone_number %}
-                        <a href="tel:{{ listing.phone_number }}" class="contact-phone" style="display: block; background: #e5e7eb; padding: 1rem; border-radius: 4px; text-align: center; color: #1f2937; font-weight: 600; text-decoration: none; margin-top: 0.5rem;">Call/Text: {{ listing.phone_number }}</a>
+                    {% if listing.seller.phone_number %}
+                        <a href="tel:{{ listing.seller.phone_number }}"
+                            class="contact-phone"
+                            style="display: block; background: #e5e7eb; padding: 1rem; border-radius: 4px; text-align: center; color: #1f2937; font-weight: 600; text-decoration: none; margin-top: 0.5rem;">
+                            Call/Text: {{ listing.seller.phone_number }}
+                        </a>
                     {% endif %}
                 </div>
             </div>

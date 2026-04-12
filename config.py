@@ -14,4 +14,4 @@ class Config:
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_USERNAME')
 
     # Email domain restriction
-    ALLOWED_EMAIL_DOMAIN = 'gus.pittstate.edu'
+    ALLOWED_EMAIL_DOMAIN = 'gus.pittstate.edu', 'pittstate.edu'

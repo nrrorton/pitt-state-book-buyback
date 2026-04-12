@@ -51,7 +51,11 @@ def register():
         return redirect(url_for('index'))
     form = RegistrationForm()
     if form.validate_on_submit():
-        user = User(email=form.email.data, display_name=form.display_name.data)
+        user = User(
+            email=form.email.data,
+            display_name=form.display_name.data,
+            phone_number=form.phone_number.data
+        )
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
@@ -110,7 +114,6 @@ def new_listing():
             price=float(form.price.data),
             course_code=form.course_code.data,
             professor=form.professor.data,
-            phone_number=form.phone_number.data,
             description=form.description.data,
             seller_id=current_user.id
         )
@@ -143,7 +146,6 @@ def edit_listing(listing_id):
         listing.price = float(form.price.data)
         listing.course_code = form.course_code.data
         listing.professor = form.professor.data
-        listing.phone_number = form.phone_number.data
         listing.description = form.description.data
         db.session.commit()
         flash('Listing updated successfully!', 'success')

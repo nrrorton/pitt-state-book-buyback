@@ -12,6 +12,7 @@ class User(UserMixin, db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    phone_number = db.Column(db.String(20), nullable=True)
     display_name = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
@@ -57,7 +58,6 @@ class Listing(db.Model):
     price = db.Column(db.Float, nullable=False)
     course_code = db.Column(db.String(20), nullable=True)
     professor = db.Column(db.String(100), nullable=True)
-    phone_number = db.Column(db.String(20), nullable=True)
     description = db.Column(db.Text, nullable=True)
     status = db.Column(db.String(20), default='active', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
