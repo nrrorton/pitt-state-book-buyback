@@ -3,6 +3,80 @@
 {% block title %}New Listing - Pitt State Book Buyback{% endblock %}
 
 {% block content %}
-<h1>Post a Book</h1>
-<p>New listing form coming soon.</p>
+<div class="auth-container" style="max-width: 600px;">
+    <h1>Post a Book</h1>
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.title.label }}
+            {% if form.title.errors %}
+                {{ form.title(class="form-control is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.title.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.title(class="form-control") }}
+            {% endif %}
+        </div>
+        <div class="form-group">
+            {{ form.author.label }}
+            {% if form.author.errors %}
+                {{ form.author(class="form-control is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.author.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.author(class="form-control") }}
+            {% endif %}
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <div class="form-group" style="flex: 1;">
+                {{ form.edition.label }}
+                {{ form.edition(class="form-control") }}
+            </div>
+            <div class="form-group" style="flex: 1;">
+                {{ form.condition.label }}
+                {{ form.condition(class="form-control") }}
+            </div>
+        </div>
+        <div class="form-group">
+            {{ form.price.label }}
+            {% if form.price.errors %}
+                {{ form.price(class="form-control is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.price.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.price(class="form-control") }}
+            {% endif %}
+        </div>
+        <div style="display: flex; gap: 1rem;">
+            <div class="form-group" style="flex: 1;">
+                {{ form.course_code.label }}
+                {{ form.course_code(class="form-control") }}
+            </div>
+            <div class="form-group" style="flex: 1;">
+                {{ form.professor.label }}
+                {{ form.professor(class="form-control") }}
+            </div>
+        </div>
+        <div class="form-group">
+            {{ form.phone_number.label }}
+            {{ form.phone_number(class="form-control") }}
+        </div>
+        <div class="form-group">
+            {{ form.description.label }}
+            {{ form.description(class="form-control", rows=4) }}
+        </div>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+</div>
 {% endblock %}

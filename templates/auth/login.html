@@ -3,6 +3,44 @@
 {% block title %}Login - Pitt State Book Buyback{% endblock %}
 
 {% block content %}
-<h1>Login</h1>
-<p>Login form coming soon.</p>
+<div class="auth-container">
+    <h1>Login</h1>
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.email.label }}
+            {% if form.email.errors %}
+                {{ form.email(class="form-control is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.email.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.email(class="form-control") }}
+            {% endif %}
+        </div>
+        <div class="form-group">
+            {{ form.password.label }}
+            {% if form.password.errors %}
+                {{ form.password(class="form-control is-invalid") }}
+                <div class="invalid-feedback">
+                    {% for error in form.password.errors %}
+                        <span>{{ error }}</span>
+                    {% endfor %}
+                </div>
+            {% else %}
+                {{ form.password(class="form-control") }}
+            {% endif %}
+        </div>
+        <div class="form-group">
+            {{ form.submit(class="btn btn-primary") }}
+        </div>
+    </form>
+    <div class="auth-footer">
+        <small class="text-muted">
+            Don't have an account? <a href="{{ url_for('register') }}">Register Now</a>
+        </small>
+    </div>
+</div>
 {% endblock %}

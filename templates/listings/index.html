@@ -1,8 +1,31 @@
 {% extends "base.html" %}
 
-{% block title %}Listings - Pitt State Book Buyback{% endblock %}
+{% block title %}Browse Books - Pitt State Book Buyback{% endblock %}
 
 {% block content %}
-<h1>Book Listings</h1>
-<p>Listings will display here.</p>
+<div class="listings-header">
+    <h1>Available Books</h1>
+    <a href="{{ url_for('new_listing') }}" class="btn btn-primary">Sell a Book</a>
+</div>
+
+<div class="listings-grid">
+    {% for listing in listings %}
+        <div class="listing-card">
+            <div class="listing-details">
+                <h3><a href="{{ url_for('listing_detail', listing_id=listing.id) }}">{{ listing.title }}</a></h3>
+                <p class="author">by {{ listing.author }}</p>
+                <div class="listing-meta">
+                    <span class="badge {{ listing.condition }}">{{ listing.condition|replace('_', ' ')|title }}</span>
+                    {% if listing.course_code %}
+                        <span class="course">{{ listing.course_code }}</span>
+                    {% endif %}
+                </div>
+                <p class="price">${{ "%.2f"|format(listing.price) }}</p>
+                <p class="seller">Sold by: {{ listing.seller.display_name }}</p>
+            </div>
+        </div>
+    {% else %}
+        <p>No listings found. Be the first to <a href="{{ url_for('new_listing') }}">list a book</a>!</p>
+    {% endfor %}
+</div>
 {% endblock %}

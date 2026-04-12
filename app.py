@@ -2,6 +2,7 @@ from flask import Flask, render_template, redirect, url_for, flash, request
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from config import Config
 from models import db, User, Listing, Rating, Report
+from forms import RegistrationForm, LoginForm, ListingForm
 from flask_mail import Mail
 
 app = Flask(__name__)
@@ -48,15 +49,34 @@ with app.app_context():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-    # This is a placeholder for form handling once we build those out
-    return render_template('auth/register.html')
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        user = User(email=form.email.data, display_name=form.display_name.data)
+        user.set_password(form.password.data)
+        db.session.add(user)
+        db.session.commit()
+        flash('Your account has been created! You can now log in.', 'success')
+        return redirect(url_for('login'))
+    return render_template('auth/register.html', form=form)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
-    # Again, this is a placeholder until forms.py is built
-    return render_template('auth/login.html')
+    form = LoginForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user and user.check_password(form.password.data):
+            if not user.is_active:
+                flash('Your account is suspended. Please contact an admin.', 'error')
+                return redirect(url_for('login'))
+            login_user(user)
+            next_page = request.args.get('next')
+            flash('Login successful!', 'success')
+            return redirect(next_page) if next_page else redirect(url_for('index'))
+        else:
+            flash('Login Unsuccessful. Please check email and password.', 'error')
+    return render_template('auth/login.html', form=form)
 
 @app.route('/logout')
 @login_required
@@ -80,8 +100,25 @@ def listings():
 @app.route('/listings/new', methods=['GET', 'POST'])
 @login_required
 def new_listing():
-    # Placeholder for form handling
-    return render_template('listings/new.html')
+    form = ListingForm()
+    if form.validate_on_submit():
+        listing = Listing(
+            title=form.title.data,
+            author=form.author.data,
+            edition=form.edition.data,
+            condition=form.condition.data,
+            price=float(form.price.data),
+            course_code=form.course_code.data,
+            professor=form.professor.data,
+            phone_number=form.phone_number.data,
+            description=form.description.data,
+            seller_id=current_user.id
+        )
+        db.session.add(listing)
+        db.session.commit()
+        flash('Your book has been listed!', 'success')
+        return redirect(url_for('listings'))
+    return render_template('listings/new.html', form=form, title='New Listing')
 
 @app.route('/listings/<int:listing_id>')
 def listing_detail(listing_id):
@@ -95,9 +132,24 @@ def edit_listing(listing_id):
     # checking to make sure it's either admin or current user before edits are permitted
     if listing.seller_id != current_user.id and not current_user.is_admin:
         flash('You do not have permission to edit this listing.', 'error')
-        return redirect(url_for('listings'))
-    # Form handling logic will go here later
-    return render_template('listings/edit.html', listing=listing)
+        return redirect(url_for('listing_detail', listing_id=listing.id))
+    
+    form = ListingForm(obj=listing)
+    if form.validate_on_submit():
+        listing.title = form.title.data
+        listing.author = form.author.data
+        listing.edition = form.edition.data
+        listing.condition = form.condition.data
+        listing.price = float(form.price.data)
+        listing.course_code = form.course_code.data
+        listing.professor = form.professor.data
+        listing.phone_number = form.phone_number.data
+        listing.description = form.description.data
+        db.session.commit()
+        flash('Listing updated successfully!', 'success')
+        return redirect(url_for('listing_detail', listing_id=listing.id))
+    
+    return render_template('listings/edit.html', form=form, listing=listing)
 
 @app.route('/listings/<int:listing_id>/delete', methods=['GET', 'POST'])
 @login_required
