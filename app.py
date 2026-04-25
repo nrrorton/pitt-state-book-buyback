@@ -1,9 +1,16 @@
-from flask import Flask, render_template, redirect, url_for, flash, request
+import os
+from flask import Flask, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from config import Config
 from models import db, User, Listing, Rating, Report
-from forms import RegistrationForm, LoginForm, ListingForm
+from forms import RegistrationForm, LoginForm, ListingForm, ReportForm
 from flask_mail import Mail
+from werkzeug.utils import secure_filename
+
+def allowed_file(filename):
+    return '.' in filename and \
+            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -11,6 +18,7 @@ app.config.from_object(Config)
 
 db.init_app(app)
 mail = Mail(app)
+jwt = JWTManager(app)
 
 # Ensuring anyone trying to access @login_required routes without being logged
 # in are redirected to login page.
@@ -67,6 +75,7 @@ def register():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
+    
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
@@ -97,7 +106,6 @@ def index():
 
 @app.route('/listings')
 def listings():
-    # Placeholder to add search/filter logic here later
     all_listings = Listing.query.filter_by(status='active').order_by(Listing.created_at.desc()).all()
     return render_template('listings/index.html', listings=all_listings)
 
@@ -106,6 +114,13 @@ def listings():
 def new_listing():
     form = ListingForm()
     if form.validate_on_submit():
+        image_filename = None
+        if form.image.data and allowed_file(form.image.data.filename):
+            filename = secure_filename(form.image.data.filename)
+            unique_filename = f"{current_user.id}_{filename}"
+            form.image.data.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
+            image_filename = unique_filename
+
         listing = Listing(
             title=form.title.data,
             author=form.author.data,
@@ -115,6 +130,7 @@ def new_listing():
             course_code=form.course_code.data,
             professor=form.professor.data,
             description=form.description.data,
+            image_filename=image_filename,
             seller_id=current_user.id
         )
         db.session.add(listing)
@@ -132,6 +148,7 @@ def listing_detail(listing_id):
 @login_required
 def edit_listing(listing_id):
     listing = Listing.query.get_or_404(listing_id)
+
     # checking to make sure it's either admin or current user before edits are permitted
     if listing.seller_id != current_user.id and not current_user.is_admin:
         flash('You do not have permission to edit this listing.', 'error')
@@ -147,6 +164,18 @@ def edit_listing(listing_id):
         listing.course_code = form.course_code.data
         listing.professor = form.professor.data
         listing.description = form.description.data
+
+        # We need to verify that a photo exists before replacement can occur
+        if form.image.data and allowed_file(form.image.data.filename):
+            if listing.image_filename:
+                old_path = os.path.join(app.config['UPLOAD_FOLDER'], listing.image_filename)
+                if os.path.exists(old_path):
+                    os.remove(old_path)
+            filename = secure_filename(form.image.data.filename)
+            unique_filename = f"{current_user.id}_{filename}"
+            form.image.data.save(os.path.join(app.config['UPLOAD_FOLDER'], unique_filename))
+            listing.image_filename = unique_filename
+
         db.session.commit()
         flash('Listing updated successfully!', 'success')
         return redirect(url_for('listing_detail', listing_id=listing.id))
@@ -157,15 +186,44 @@ def edit_listing(listing_id):
 @login_required
 def delete_listing(listing_id):
     listing = Listing.query.get_or_404(listing_id)
+
     # Checking to make sure it's either admin or current user wishing to delete listing before doing so
     if listing.seller_id != current_user.id and not current_user.is_admin:
         flash('You do not have permission to delete this listing.', 'error')
         return redirect(url_for('listings'))
+    
+    # Cleaning up the image file if it exists
+    if listing.image_filename:
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], listing.image_filename)
+        if os.path.exists(image_path):
+            os.remove(image_path)
+
     db.session.delete(listing)
     db.session.commit()
     flash('Listing deleted.', 'info')
     return redirect(url_for('listings'))
 
+@app.route('/listings/<int:listing_id>/report', methods=['GET', 'POST'])
+@login_required
+def report_listing(listing_id):
+    listing = Listing.query.get_or_404(listing_id)
+
+    if listing.seller_id == current_user.id:
+        flash('You cannot report your own listing.', 'error')
+        return redirect(url_for('listing_ddetail', listing_id=listing.id))
+    
+    form = ReportForm()
+    if form.validate_on_submit():
+        report = Report(
+            reporter_id=current_user.id,
+            listing_id=listing.id,
+            reason=form.reason.data
+        )
+        db.session.add(report)
+        db.session.commit()
+        flash('Your report has been submitted. We will review it shortly.', 'success')
+        return redirect(url_for('listing_detail', listing_id=listing.id))
+    return render_template('listings/report.html', form=form, listing=listing)
 
 # Route for User Profile
 @app.route('/users/<int:user_id>')
@@ -183,7 +241,8 @@ def admin_dashboard():
         return redirect(url_for('index'))
     users = User.query.order_by(User.created_at.desc()).all()
     reports = Report.query.filter_by(resolved=False).all()
-    return render_template('admin/dashboard.html', users=users, reports=reports)
+    active_listings = Listing.query.filter_by(status='active').count()
+    return render_template('admin/dashboard.html', users=users, reports=reports, active_listings=active_listings)
 
 @app.route('/admin/users/<int:user_id>/suspend', methods=['POST'])
 @login_required
@@ -196,6 +255,157 @@ def suspend_user(user_id):
     db.session.commit()
     flash(f'{user.display_name} has been suspended.', 'info')
     return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/reports/<int:report_id>/resolve', methods=['POST'])
+@login_required
+def resolve_report(report_id):
+    if not current_user.is_admin:
+        flash('Access Denied.', 'error')
+        return redirect(url_for('index'))
+    report = Report.query.get_or_404(report_id)
+    report.resolved = True
+    db.session.commit()
+    flash('Report marked as resolved.', 'info')
+    return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/users/<int:user_id>/reinstate', methods=['POST'])
+@login_required
+def reinstate_user(user_id):
+    if not current_user.is_admin:
+        flash('Access Denied.', 'error')
+        return redirect(url_for('index'))
+    
+    user = User.query.get_or_404(user_id)
+    user.is_active = True
+    db.session.commit()
+    flash(f'{user.display_name} has been reinstated.', 'info')
+    return redirect(url_for('admin_dashboard'))
+
+
+# Adding API Routes for potential future mobile expansion
+
+@app.route('/api/v1/auth/login', methods=['POST'])
+def api_login():
+    data = request.get_json()
+
+    if not data or not data.get('email') or not data.get('password'):
+        return jsonify({'error': 'Email and password are required.'}), 400
+    
+    user = User.query.filter_by(email=data['email'].strip().lower()).first()
+
+    if not user or not user.check_password(data['password']):
+        return jsonify({'error': 'Invalid email or password.'}), 401
+    
+    if not user.is_active:
+        return jsonify({'error': 'Your account has been suspended. Please contact an admin'}), 403
+    
+    access_token = create_access_token(identity=str(user.id))
+    return jsonify({'access_token': access_token, 'user': user.to_dict()}), 200
+
+@app.route('/api/v1/listings', methods=['GET'])
+def api_get_listings():
+    listings = Listing.query.filter_by(status='active').order_by(Listing.created_at.desc()).all()
+    return jsonify([listing.to_dict() for listing in listings]), 200
+
+@app.route('/api/v1/listings/<int:listing_id>', methods=['GET'])
+def api_get_listing(listing_id):
+    listing = Listing.query.get_or_404(listing_id)
+    return jsonify(listing.to_dict()), 200
+
+@app.route('/api/v1/listings', methods=['POST'])
+@jwt_required()
+def api_create_listings():
+    current_user_id = int(get_jwt_identity())
+    data = request.get_json()
+
+    required_fields = ['title', 'author', 'condition', 'price']
+    for field in required_fields:
+        if not data or not data.get(field):
+            return jsonify({'error': f'{field} is required.'}), 400
+        
+    try:
+        price = float(data['price'])
+        if price < 0:
+            raise ValueError
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Price must be a positive number.'}), 400
+    
+    listing = Listing(
+        title=data['title'],
+        author=data['author'],
+        edition=data.get('edition'),
+        condition=data['condition'],
+        price=price,
+        course_code=data.get('course_code'),
+        professor=data.get('professor'),
+        description=data.get('description'),
+        seller_id=current_user_id
+    )
+    db.session.add(listing)
+    db.session.commit()
+    return jsonify(listing.to_dict()), 201
+
+@app.route('/api/v1/listings/<int:listing_id>', methods=['PUT'])
+@jwt_required()
+def api_edit_listing(listing_id):
+    current_user_id = int(get_jwt_identity())
+    listing = Listing.query.get_or_404(listing_id)
+
+    if listing.seller_id != current_user_id:
+        user = User.query.get(current_user_id)
+        if not user or not user.is_admin:
+            return jsonify({'error': 'You do not have permission to edit this listing.'}), 403
+        
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No data provided.'}), 400
+    
+    listing.title = data.get('title', listing.title)
+    listing.author = data.get('author', listing.author)
+    listing.edition = data.get('edition', listing.edition)
+    listing.condition = data.get('condition', listing.condition)
+    listing.professor = data.get('professor', listing.professor)
+    listing.course_code = data.get('course_code', listing.course_code)
+    listing.description = data.get('description', listing.description)
+
+    if 'price' in data:
+        try:
+            price = float(data['price'])
+            if price < 0:
+                raise ValueError
+            listing.price = price
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Price must be a positive number.'}), 400
+        
+    db.session.commit()
+    return jsonify(listing.to_dict()), 200
+
+@app.route('/api/v1/listings/<int:listing_id>', methods=['DELETE'])
+@jwt_required()
+def api_delete_listing(listing_id):
+    current_user_id = int(get_jwt_identity())
+    listing = Listing.query.get_or_404(listing_id)
+
+    if listing.seller_id != current_user_id:
+        user = User.query.get(current_user_id)
+        if not user or not user.is_admin:
+            return jsonify({'error': 'You do not have permission to delete this listing.'}), 403
+        
+    if listing.image_filename:
+        image_path = os.path.join(app.config['UPLOAD_FOLDER'], listing.image_filename)
+        if os.path.exists(image_path):
+            os.remove(image_path)
+
+    db.session.delete(listing)
+    db.session.commit()
+    return jsonify({'message': 'Listing deleted successfully.'}), 200
+
+@app.route('/api/v1/users/<int:user_id>', methods=['GET'])
+def api_get_user(user_id):
+    user = User.query.get_or_404(user_id)
+    return jsonify(user.to_dict()), 200
+
+
 
 if __name__ == "__main__":
     app.run(debug = True, host = "0.0.0.0", port = 3000)

@@ -13,10 +13,21 @@
                     <button type="submit" class="btn btn-danger">Delete</button>
                 </form>
             {% endif %}
+            {% if current_user.is_authenticated and listing.seller_id != current_user.id and not current_user.is_admin %}
+                <a href="{{ url_for('report_listing', listing_id=listing.id) }}" class="btn btn-danger">Report</a>
+            {% endif %}
         </div>
     </div>
 
     <div class="listing-content">
+        <div class="listing-image">
+            {% if listing.image_filename %}
+                <img src="{{ url_for('static', filename='uploads/' + listing.image_filename) }}" alt="Photo of {{ listing.title }}">
+            {% else %}
+                <div class="no-image">No photo provided.</div>
+            {% endif %}
+        </div>
+        
         <div class="listing-info">
             <h1>{{ listing.title }}</h1>
             <p class="detail-author">by {{ listing.author }}</p>

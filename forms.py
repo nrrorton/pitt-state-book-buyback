@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, BooleanField, SubmitField, DecimalField, TextAreaField, SelectField
+from wtforms import StringField, PasswordField, BooleanField, SubmitField, DecimalField, TextAreaField, SelectField, FileField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, ValidationError, NumberRange, Optional
 from models import User
 
@@ -54,4 +54,9 @@ class ListingForm(FlaskForm):
     course_code = StringField('Course Code (Optional)', validators=[Length(max=20)])
     professor = StringField('Professor (Optional)', validators=[Length(max=100)])
     description = TextAreaField('Description (Optional)')
+    image = FileField('Book Photo (Optional)')
     submit = SubmitField('Post Listing')
+
+class ReportForm(FlaskForm):
+    reason = TextAreaField('Reason for Report', validators=[DataRequired(), Length(min=10, max=1000)])
+    submit = SubmitField('Submit Report')

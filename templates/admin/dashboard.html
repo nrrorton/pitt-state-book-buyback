@@ -3,6 +3,135 @@
 {% block title %}Admin Dashboard - Pitt State Book Buyback{% endblock %}
 
 {% block content %}
-<h1>Admin Dashboard</h1>
-<p>Admin controls will display here.</p>
+<div style="max-width: 900px; margin: 0 auto;">
+
+    <div class="listings-header">
+        <h1>Admin Dashboard</h1>
+        <span style="font-size: 0.875rem; color: #6b7280;">Logged in as {{ current_user.display_name }}</span>
+    </div>
+
+    <!-- Summary Cards -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; margin-bottom: 2rem;">
+        <div class="seller-card" style="text-align: center;">
+            <p style="font-size: 2rem; font-weight: 800; color: #3b82f6; margin: 0;">{{ users|length }}</p>
+            <p style="color: #6b7280; margin: 0.25rem 0 0 0;">Total Users</p>
+        </div>
+        <div class="seller-card" style="text-align: center;">
+            <p style="font-size: 2rem; font-weight: 800; color: #059669; margin: 0;">{{ active_listings }}</p>
+            <p style="color: #6b7280; margin: 0.25rem 0 0 0;">Active Listings</p>
+        </div>
+        <div class="seller-card" style="text-align: center;">
+            <p style="font-size: 2rem; font-weight: 800; color: #ef4444; margin: 0;">{{ reports|length }}</p>
+            <p style="color: #6b7280; margin: 0.25rem 0 0 0;">Open Reports</p>
+        </div>
+    </div>
+
+    <!-- Open Reports -->
+    <div class="seller-card" style="margin-bottom: 2rem;">
+        <h2 style="margin-top: 0;">Open Reports</h2>
+        {% if reports %}
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+            <thead>
+                <tr style="border-bottom: 2px solid #e5e7eb; text-align: left;">
+                    <th style="padding: 0.75rem 0.5rem; color: #6b7280;">Reporter</th>
+                    <th style="padding: 0.75rem 0.5rem; color: #6b7280;">Type</th>
+                    <th style="padding: 0.75rem 0.5rem; color: #6b7280;">Reason</th>
+                    <th style="padding: 0.75rem 0.5rem; color: #6b7280;">Date</th>
+                    <th style="padding: 0.75rem 0.5rem; color: #6b7280;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 0.75rem 0.5rem;">{{ report.reporter.display_name }}</td>
+                    <td style="padding: 0.75rem 0.5rem;">
+                        {% if report.listing_id %}
+                        <span class="course">Listing</span>
+                        {% else %}
+                        <span class="badge acceptable">User</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.75rem 0.5rem; max-width: 250px;">{{ report.reason }}</td>
+                    <td style="padding: 0.75rem 0.5rem; color: #6b7280;">{{ report.created_at.strftime('%b %d, %Y') }}
+                    </td>
+                    <td style="padding: 0.75rem 0.5rem;">
+                        <form action="{{ url_for('resolve_report', report_id=report.id) }}" method="POST"
+                            style="display: inline;">
+                            <button type="submit" class="btn btn-primary"
+                                style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">Resolve</button>
+                        </form>
+                        {% if report.listing_id %}
+                        <a href="{{ url_for('listing_detail', listing_id=report.listing_id) }}"
+                            class="btn btn-secondary"
+                            style="font-size: 0.75rem; padding: 0.25rem 0.75rem; text-decoration: none; margin-left: 0.25rem;">View</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #6b7280; margin: 0;">No open reports. All clear!</p>
+        {% endif %}
+    </div>
+
+    <!-- User Management -->
+    <div class="seller-card">
+        <h2 style="margin-top: 0;">User Management</h2>
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.875rem;">
+            <thead>
+                <tr style="border-bottom: 2px solid #e5e7eb; text-align: left;">
+                    <th style="padding: 0.75rem 0.5rem; color: #6b7280;">Display Name</th>
+                    <th style="padding: 0.75rem 0.5rem; color: #6b7280;">Email</th>
+                    <th style="padding: 0.75rem 0.5rem; color: #6b7280;">Joined</th>
+                    <th style="padding: 0.75rem 0.5rem; color: #6b7280;">Status</th>
+                    <th style="padding: 0.75rem 0.5rem; color: #6b7280;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 0.75rem 0.5rem;">
+                        <a href="{{ url_for('profile', user_id=user.id) }}"
+                            style="color: #3b82f6; text-decoration: none; font-weight: 600;">{{ user.display_name }}</a>
+                        {% if user.is_admin %}
+                        <span class="badge like_new" style="margin-left: 0.5rem;">Admin</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.75rem 0.5rem; color: #6b7280;">{{ user.email }}</td>
+                    <td style="padding: 0.75rem 0.5rem; color: #6b7280;">{{ user.created_at.strftime('%b %d, %Y') }}
+                    </td>
+                    <td style="padding: 0.75rem 0.5rem;">
+                        {% if user.is_active %}
+                        <span class="badge like_new">Active</span>
+                        {% else %}
+                        <span class="badge acceptable">Suspended</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 0.75rem 0.5rem;">
+                        {% if not user.is_admin %}
+                        {% if user.is_active %}
+                        <form action="{{ url_for('suspend_user', user_id=user.id) }}" method="POST"
+                            style="display: inline;" onsubmit="return confirm('Suspend {{ user.display_name }}?');">
+                            <button type="submit" class="btn btn-danger"
+                                style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">Suspend</button>
+                        </form>
+                        {% else %}
+                        <form action="{{ url_for('reinstate_user', user_id=user.id) }}" method="POST"
+                            style="display: inline;" onsubmit="return confirm('Reinstate {{ user.display_name }}?');">
+                            <button type="submit" class="btn btn-primary"
+                                style="font-size: 0.75rem; padding: 0.25rem 0.75rem;">Reinstate</button>
+                        </form>
+                        {% endif %}
+                        {% else %}
+                        <span style="color: #9ca3af; font-size: 0.75rem;">N/A</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
 {% endblock %}

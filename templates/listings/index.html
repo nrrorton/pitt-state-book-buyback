@@ -10,20 +10,25 @@
 
 <div class="listings-grid">
     {% for listing in listings %}
-        <div class="listing-card">
-            <div class="listing-details">
-                <h3><a href="{{ url_for('listing_detail', listing_id=listing.id) }}">{{ listing.title }}</a></h3>
-                <p class="author">by {{ listing.author }}</p>
-                <div class="listing-meta">
-                    <span class="badge {{ listing.condition }}">{{ listing.condition|replace('_', ' ')|title }}</span>
-                    {% if listing.course_code %}
-                        <span class="course">{{ listing.course_code }}</span>
-                    {% endif %}
+        <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" class="listing-card-link">
+            <div class="listing-card">
+                {% if listing.image_filename %}
+                    <img src="{{ url_for('static', filename='uploads/' + listing.image_filename) }}" alt="Photo of {{ listing.title }}" class="listing-thumbnail">
+                {% endif %}
+                <div class="listing-details">
+                    <h3>{{ listing.title }}</h3>
+                    <p class="author">by {{ listing.author }}</p>
+                    <div class="listing-meta">
+                        <span class="badge {{ listing.condition }}">{{ listing.condition|replace('_', ' ')|title }}</span>
+                        {% if listing.course_code %}
+                            <span class="course">{{ listing.course_code }}</span>
+                        {% endif %}
+                    </div>
+                    <p class="price">${{ "%.2f"|format(listing.price) }}</p>
+                    <p class="seller">Sold by: {{ listing.seller.display_name }}</p>
                 </div>
-                <p class="price">${{ "%.2f"|format(listing.price) }}</p>
-                <p class="seller">Sold by: {{ listing.seller.display_name }}</p>
             </div>
-        </div>
+        </a>
     {% else %}
         <p>No listings found. Be the first to <a href="{{ url_for('new_listing') }}">list a book</a>!</p>
     {% endfor %}

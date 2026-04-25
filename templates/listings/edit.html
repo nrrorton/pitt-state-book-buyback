@@ -9,7 +9,7 @@
         <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" class="back-link">&larr; Back to Listing</a>
     </div>
     
-    <form method="POST" action="">
+    <form method="POST" action="" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
         <div class="form-group">
             {{ form.title.label }}
@@ -71,12 +71,19 @@
             </div>
         </div>
         <div class="form-group">
-            {{ form.phone_number.label }}
-            {{ form.phone_number(class="form-control") }}
-        </div>
-        <div class="form-group">
             {{ form.description.label }}
             {{ form.description(class="form-control", rows=4) }}
+        </div>
+        <div class="form-group">
+            {% if listing.image_filename %}
+                <p>Current Photo:</p>
+                <img src="{{ url_for('static', filename='uploads/' + listing.image_filename) }}" alt="Current book photo" style="max-width: 200px; margin-bottom: 0.5rem; display: block;">
+            {% endif %}
+            {{ form.image.label }}
+            {{ form.image(class="form-control") }}
+            {% if listing.image_filename %}
+                <small>Leave blank to keep the current photo.</small>
+            {% endif %}
         </div>
         <div class="form-group" style="display: flex; gap: 1rem; align-items: center;">
             {{ form.submit(class="btn btn-primary") }}

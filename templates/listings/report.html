@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Report Listing - Pitt State Book Buyback{% endblock %}
+
+{% block content %}
+<div class="auth-container" style="max-width: 600px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h1>Report Listing</h1>
+        <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" class="back-link">&larr; Back to Listing</a>
+    </div>
+
+    <div class="safety-notice" style="margin-bottom: 1.5rem;">
+        <h4>Reporting: {{ listing.title }}</h4>
+        <p style="margin: 0; color: #92400e;">Please provide a clear reason for your report. Abuse of the reporting
+            system may result in account suspension.</p>
+    </div>
+
+    <form method="POST" action="">
+        {{ form.hidden_tag() }}
+        <div class="form-group">
+            {{ form.reason.label }}
+            {% if form.reason.errors %}
+            {{ form.reason(class="form-control is-invalid", rows=5) }}
+            <div class="invalid-feedback">
+                {% for error in form.reason.errors %}
+                <span>{{ error }}</span>
+                {% endfor %}
+            </div>
+            {% else %}
+            {{ form.reason(class="form-control", rows=5) }}
+            {% endif %}
+        </div>
+        <div class="form-group" style="display: flex; gap: 1rem; align-items: center;">
+            {{ form.submit(class="btn btn-danger") }}
+            <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" class="btn btn-secondary"
+                style="text-decoration: none;">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

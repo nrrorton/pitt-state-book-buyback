@@ -41,6 +41,15 @@ class User(UserMixin, db.Model):
             return None
         return round(sum(r.score for r in self.ratings_received) / len(self.ratings_received), 1)
     
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'display_name': self.display_name,
+            'member_since': self.created_at.strftime('%B %Y'),
+            'average_rating': self.average_rating(),
+            'listing_ccount': len(self.listings)
+        }
+    
     def __repr__(self):
         return f'<User {self.email}>'
     
@@ -59,6 +68,7 @@ class Listing(db.Model):
     course_code = db.Column(db.String(20), nullable=True)
     professor = db.Column(db.String(100), nullable=True)
     description = db.Column(db.Text, nullable=True)
+    image_filename = db.Column(db.String(256), nullable=True)
     status = db.Column(db.String(20), default='active', nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
@@ -69,6 +79,23 @@ class Listing(db.Model):
 
     def __repr__(self):
         return f'<Listing {self.title}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'author': self.author,
+            'edition': self.edition,
+            'condition': self.condition,
+            'price': self.price,
+            'course_code': self.course_code,
+            'professor': self.professor,
+            'description': self.description,
+            'status': self.status,
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+            'image_url': f'/static/uploads/{self.image_filename}' if self.image_filename else None,
+            'seller': self.seller.to_dict()
+        }
     
 
 # Rating Model
