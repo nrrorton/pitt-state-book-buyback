@@ -63,11 +63,63 @@
             </div>
         </div>
 
+        <div class="ratings-section">
+            <h3>Ratings</h3>
+
+            {% if current_user.is_authenticated and listing.seller_id != current_user.id %}
+                
+                {% if not already_rated %}
+                    <form action="{{ url_for('rate_listing', listing_id=listing.id) }}" method="POST" class="rating-form">
+                        {{ form.hidden_tag() }}
+                        <div class="form-group">
+                            {{ form.score.label }}
+                            {{ form.score(class="form-control") }}
+                        </div>
+                        <div class="form-group">
+                            {{ form.comment.label }}
+                            {{ form.comment(class="form-control", rows=3, placeholder="Leave a comment about your experience..") }}
+                        </div>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </form>
+                {% else %}
+                    <p class="already-rated">You have already rated this listing</p>
+                {% endif %}
+            {% elif not current_user.is_authenticated %}
+                <p><a href="{{ url_for('login') }}">Log in</a> to leave a rating.</p>
+            {% endif %}
+            
+            {% if listing.ratings %}
+                <div class="rating-list">
+                    {% for rating in listing.ratings %}
+                        <div class="rating-card">
+                            <div class="rating-header">
+                                <strong>{{ rating.score }}/5 stars</strong>
+                                <span class="rating-date">{{ rating.created_at.strftime('%B %d, %Y') }}</span>
+                            </div>
+                            {% if rating.comment %}
+                                <p class="rating-comment">{{ rating.comment }}</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-ratings">No ratings yet for this listing.</p>
+            {% endif %}
+        </div>
+
         <div class="seller-sidebar">
             <div class="seller-card">
                 <h3>About the Seller</h3>
                 <p class="seller-name"><a href="{{ url_for('profile', user_id=listing.seller.id) }}">{{ listing.seller.display_name }}</a></p>
                 <p class="seller-meta">Member since {{ listing.seller.created_at.strftime('%B %Y') }}</p>
+
+                {% set avg = listing.seller.average_rating() %}
+                {% if avg %}
+                    <p class="seller-rating">Seller Rating: <strong> {{ avg }}</strong></p>
+                {% else %}
+                    <p class="seller-rating">No ratings yet.</p>
+                {% endif %}
+
                 <div class="seller-contact">
                     <p>To buy this book, contact the seller at:</p>
                     <a href="mailto:{{ listing.seller.email }}" class="contact-email">{{ listing.seller.email }}</a>

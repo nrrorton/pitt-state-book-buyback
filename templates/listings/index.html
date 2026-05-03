@@ -25,7 +25,7 @@
                         {% endif %}
                     </div>
                     <p class="price">${{ "%.2f"|format(listing.price) }}</p>
-                    <p class="seller">Sold by: {{ listing.seller.display_name }}</p>
+                    <p class="seller">Sold by: <a href="{{ url_for('profile', user_id=listing.seller.id) }} onclick="event.stopPropagation();">{{ listing.seller.display_name }}</a></p>
                 </div>
             </div>
         </a>

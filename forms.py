@@ -60,3 +60,9 @@ class ListingForm(FlaskForm):
 class ReportForm(FlaskForm):
     reason = TextAreaField('Reason for Report', validators=[DataRequired(), Length(min=10, max=1000)])
     submit = SubmitField('Submit Report')
+
+class RatingForm(FlaskForm):
+    score = SelectField('Rating', choices=[(str(i), f'{i} stars') for i in range(1, 6)],
+                        validators=[DataRequired()])
+    comment = TextAreaField('Comment (Optional)')
+    submit = SubmitField('Submit Rating')

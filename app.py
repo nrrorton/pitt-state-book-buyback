@@ -4,7 +4,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from config import Config
 from models import db, User, Listing, Rating, Report
-from forms import RegistrationForm, LoginForm, ListingForm, ReportForm
+from forms import RegistrationForm, LoginForm, ListingForm, ReportForm, RatingForm
 from flask_mail import Mail
 from werkzeug.utils import secure_filename
 
@@ -142,7 +142,14 @@ def new_listing():
 @app.route('/listings/<int:listing_id>')
 def listing_detail(listing_id):
     listing = Listing.query.get_or_404(listing_id)
-    return render_template('listings/detail.html', listing=listing)
+    form = RatingForm()
+    already_rated = False
+    if current_user.is_authenticated:
+        already_rated = Rating.query.filter_by(
+            listing_id=listing_id,
+            reviewer_id=current_user.id
+        ).first() is not None
+    return render_template('listings/detail.html', listing=listing, form=form, already_rated=already_rated)
 
 @app.route('/listings/<int:listing_id>/edit', methods=['GET', 'POST'])
 @login_required
@@ -224,6 +231,36 @@ def report_listing(listing_id):
         flash('Your report has been submitted. We will review it shortly.', 'success')
         return redirect(url_for('listing_detail', listing_id=listing.id))
     return render_template('listings/report.html', form=form, listing=listing)
+
+@app.route('/listings/<int:listing_id>/rate', methods=['POST'])
+@login_required
+def rate_listing(listing_id):
+    listing = Listing.query.get_or_404(listing_id)
+
+    if listing.seller_id == current_user.id:
+        flash("You can't rate your own listing.", 'error')
+        return redirect(url_for('listing_detail', listing_id=listing_id))
+    
+    existing = Rating.query.filter_by(listing_id=listing_id, reviewer_id=current_user.id).first()
+    if existing:
+        flash('You have already rated this listing.', 'error')
+        return redirect(url_for('listing_detail', listing_id=listing_id))
+    
+    score = int(request.form.get('score'))
+    comment = request.form.get('comment', '')
+
+    rating = Rating(
+        listing_id=listing_id,
+        reviewer_id=current_user.id,
+        seller_id=listing.seller_id,
+        score=score,
+        comment=comment
+    )
+
+    db.session.add(rating)
+    db.session.commit()
+    flash('Rating submitted!', 'success')
+    return redirect(url_for('listing_detail', listing_id=listing_id))
 
 # Route for User Profile
 @app.route('/users/<int:user_id>')
