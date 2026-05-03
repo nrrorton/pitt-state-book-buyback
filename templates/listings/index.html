@@ -3,55 +3,63 @@
 {% block title %}Browse Books - Pitt State Book Buyback{% endblock %}
 
 {% block content %}
-<div class="listings-header">
-    <h1>Available Books</h1>
-    <a href="{{ url_for('new_listing') }}" class="btn btn-primary">Sell a Book</a>
-</div>
+<div class="listings-container">
+    <div class="listings-header">
+        <h1>Available Books</h1>
+        <a href="{{ url_for('new_listing') }}" class="btn btn-primary">Sell a Book</a>
+    </div>
 
-<div class="search-section" style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem;">
-    <form action="{{ url_for('listings') }}" method="GET" class="search-form" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto; gap: 1rem; align-items: end;">
-        <div class="form-group" style="margin-bottom: 0;">
-            <label for="q">Search Books</label>
-            <input type="text" name="search" id="search" class="form-control" placeholder="Title, author, description..." value="{{ request.args.get('q', '') }}">
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-            <label for="course_code">Course Code</label>
-            <input type="text" name="course_code" id="course_code" class="form-control" placeholder="e.g. CIS-230" value="{{ request.args.get('course_code', '') }}">
-        </div>
-        <div class="form-group" style="margin-bottom: 0;">
-            <label for="professor">Professor</label>
-            <input type="text" name="professor" id="professor" class="form-control" placeholder="Professor name" value="{{ request.args.get('professor', '') }}">
-        </div>
-        <div>
-            <button type="submit" class="btn btn-primary">Search</button>
-            <a href="{{ url_for('listings') }}" class="btn btn-secondary" style="text-decoration: none; padding: 0.5rem 1rem; display: inline-block;">Clear</a>
-        </div>
-    </form>
-</div>
-
-<div class="listings-grid">
-    {% for listing in listings %}
-        <a href="{{ url_for('listing_detail', listing_id=listing.id) }}" class="listing-card-link">
-            <div class="listing-card">
-                {% if listing.image_filename %}
-                    <img src="{{ url_for('static', filename='uploads/' + listing.image_filename) }}" alt="Photo of {{ listing.title }}" class="listing-thumbnail">
-                {% endif %}
-                <div class="listing-details">
-                    <h3>{{ listing.title }}</h3>
-                    <p class="author">by {{ listing.author }}</p>
-                    <div class="listing-meta">
-                        <span class="badge {{ listing.condition }}">{{ listing.condition|replace('_', ' ')|title }}</span>
-                        {% if listing.course_code %}
-                            <span class="course">{{ listing.course_code }}</span>
-                        {% endif %}
-                    </div>
-                    <p class="price">${{ "%.2f"|format(listing.price) }}</p>
-                    <p class="seller">Sold by: <a href="{{ url_for('profile', user_id=listing.seller.id) }} onclick="event.stopPropagation();">{{ listing.seller.display_name }}</a></p>
-                </div>
+    <div class="search-section"
+        style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 2rem;">
+        <form action="{{ url_for('listings') }}" method="GET" class="search-form"
+            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) auto; gap: 1rem; align-items: end;">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="search">Search Books</label>
+                <input type="text" name="search" id="search" class="form-control"
+                    placeholder="Title, author, description..." value="{{ request.args.get('search', '') }}">
             </div>
-        </a>
-    {% else %}
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="course_code">Course Code</label>
+                <input type="text" name="course_code" id="course_code" class="form-control" placeholder="e.g. CIS-230"
+                    value="{{ request.args.get('course_code', '') }}">
+            </div>
+            <div class="form-group" style="margin-bottom: 0;">
+                <label for="professor">Professor</label>
+                <input type="text" name="professor" id="professor" class="form-control" placeholder="Professor name"
+                    value="{{ request.args.get('professor', '') }}">
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a href="{{ url_for('listings') }}" class="btn btn-secondary"
+                    style="text-decoration: none; padding: 0.5rem 1rem; display: inline-block;">Clear</a>
+            </div>
+        </form>
+    </div>
+
+    <div class="listings-grid">
+        {% for listing in listings %}
+        <div class="listing-card" onclick="window.location='/listings/{{ listing.id }}'" style="cursor: pointer;">
+            {% if listing.image_filename %}
+            <img src="{{ url_for('static', filename='uploads/' + listing.image_filename) }}"
+                alt="Photo of {{ listing.title }}" class="listing-thumbnail">
+            {% endif %}
+            <div class="listing-details">
+                <h3>{{ listing.title }}</h3>
+                <p class="author">by {{ listing.author }}</p>
+                <div class="listing-meta">
+                    <span class="badge {{ listing.condition }}">{{ listing.condition|replace('_', ' ')|title }}</span>
+                    {% if listing.course_code %}
+                    <span class="course">{{ listing.course_code }}</span>
+                    {% endif %}
+                </div>
+                <p class="price">${{ "%.2f"|format(listing.price) }}</p>
+                <p class="seller">Sold by: <a href="{{ url_for('profile', user_id=listing.seller.id) }}"
+                        onclick="event.stopPropagation();">{{ listing.seller.display_name }}</a></p>
+            </div>
+        </div>
+        {% else %}
         <p>No listings found. Be the first to <a href="{{ url_for('new_listing') }}">list a book</a>!</p>
-    {% endfor %}
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

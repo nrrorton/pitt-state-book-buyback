@@ -144,18 +144,18 @@ main {
     gap: 1.5rem;
 }
 
+.listings-container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 1rem;
+}
+
 .listing-card {
     background: white;
     padding: 1.5rem;
     border-radius: 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     transition: transform 0.2s;
-}
-
-.listing-card-link {
-    text-decoration: none;
-    color: inherit;
-    display: block;
 }
 
 .listing-card-link:hover .listing-card {
