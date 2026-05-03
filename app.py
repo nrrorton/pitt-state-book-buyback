@@ -107,7 +107,28 @@ def index():
 
 @app.route('/listings')
 def listings():
-    all_listings = Listing.query.filter_by(status='active').order_by(Listing.created_at.desc()).all()
+    query = Listing.query.filter_by(status='active')
+    
+    # Get parameters from url 
+    course_code = request.args.get('course_code')
+    professor = request.args.get('professor')
+    search_term = request.args.get('search')
+
+    # All queries are case insensitive
+    # Find listings matching course_code 
+    if course_code:
+        query = query.filter(Listing.course_code.ilike(f'%{course_code}%'))
+    if professor:
+        query = query.filter(Listing.professor.ilike(f'%{professor}%'))
+    # If a matching word is found anywhere in the title, author, or description section, return the books
+    if search_term:
+        query = query.filter(db.or_(
+            Listing.title.ilike(f'%{search_term}%'),
+            Listing.author.ilike(f'%{search_term}%'),
+            Listing.description.ilike(f'%{search_term}%')
+        ))
+
+    all_listings = query.order_by(Listing.created_at.desc()).all()
     return render_template('listings/index.html', listings=all_listings)
 
 @app.route('/listings/new', methods=['GET', 'POST'])
