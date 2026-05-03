@@ -34,14 +34,15 @@ with app.app_context():
     db.create_all()
 
     admins = [
-        {'email': 'norton@gus.pittstate.edu', 'display_name': 'Nicholas', 'password': 'Norton123'},
-        {'email': 'tsickles@gus.pittstate.edu', 'display_name': 'Travis', 'password': 'temporary_change123'},
+        {'email': 'norton@gus.pittstate.edu', 'phone_number': '3165186906', 'display_name': 'Nicholas', 'password': 'Norton123'},
+        {'email': 'tsickles@gus.pittstate.edu', 'phone_number': '4797159096', 'display_name': 'Travis', 'password': 'temporary_change123'},
     ]
 
     for admin_data in admins:
         if not User.query.filter_by(email=admin_data['email']).first():
             admin = User(
                 email=admin_data['email'],
+                phone_number=admin_data['phone_number'],
                 display_name=admin_data['display_name'],
                 is_admin=True,
                 is_active=True,
